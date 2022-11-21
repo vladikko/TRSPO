@@ -6,7 +6,7 @@ import time
 from queue import Queue
 import os
 
-N = 10000
+N = 1000
 
 class Collatz:
     def __init__(self, num):
@@ -30,19 +30,24 @@ def collatz_calc(num):
     else:
         return 3 * num + 1
 
-def collatzThread(queue, solved):
+def collatzThread(queue, solved, lock):
     while not queue.empty():
-        collatz = queue.get()
+        lock.acquire()
+        try:
+            collatz = queue.get()
 
-        collatz.setNum(collatz_calc(collatz.getNum()))
-        collatz.setSteps(collatz.getSteps() + 1)
+            collatz.setNum(collatz_calc(collatz.getNum()))
+            collatz.setSteps(collatz.getSteps() + 1)
 
-        if(collatz.getNum() == 1):
-            solved[collatz.getInitialNum()-1] = collatz
-        else:
-            queue.put(collatz)
+            if(collatz.getNum() == 1):
+                solved[collatz.getInitialNum()-1] = collatz
+            else:
+                queue.put(collatz)
+        finally:
+            lock.release()
 
 def main():
+    lock = threading.Lock()
     q = Queue()
     solved = [None] * N
     for i in range(N):
@@ -53,7 +58,7 @@ def main():
     print(cpu_count)
     start_time = time.time()
     for i in range(os.cpu_count()):
-        t = threading.Thread(target=collatzThread, args=(q, solved))
+        t = threading.Thread(target=collatzThread, args=(q, solved, lock))
         t.start()
         threads.append(t)
 

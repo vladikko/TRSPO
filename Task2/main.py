@@ -18,21 +18,30 @@ class Class2:
     def setNum(self, num):
         self.num = num
 
-def thread1():
+def thread1(lock):
     for i in range(0, k1):
-        num = random.uniform(0, 100)
-        class1.setNum(class1.getNum() + num)
-        num = random.uniform(0, 100)
-        class2.setNum(class2.getNum() + num)
+        lock.acquire()
+        try:
+            num = random.uniform(0, 100)
+            class1.setNum(class1.getNum() + num)
+            num = random.uniform(0, 100)
+            class2.setNum(class2.getNum() + num)
+        finally:
+            lock.release()
 
-def thread2():
+def thread2(lock):
     for i in range(0, k2):
-        num = random.uniform(0, 100)
-        class2.setNum(class2.getNum() + num)
-        num = random.uniform(0, 100)
-        class1.setNum(class1.getNum() + num)
+        lock.acquire()
+        try:
+            num = random.uniform(0, 100)
+            class2.setNum(class2.getNum() + num)
+            num = random.uniform(0, 100)
+            class1.setNum(class1.getNum() + num)
+        finally:
+            lock.release()
 
 if __name__ == "__main__":
+    lock = threading.Lock()
     n = random.randint(10, 20)
     k1 = random.randint(10000, 20000)
     k2 = random.randint(10000, 20000)
@@ -41,9 +50,9 @@ if __name__ == "__main__":
     threads = []
     for i in range(0, n):
         if i < n / 2:
-            threads.append(threading.Thread(target=thread1))
+            threads.append(threading.Thread(target=thread1, args=(lock,)))
         else:
-            threads.append(threading.Thread(target=thread2))
+            threads.append(threading.Thread(target=thread2, args=(lock,)))
     start_time = time.time()
     for thread in threads:
         thread.start()
